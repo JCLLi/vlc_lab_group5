@@ -1,20 +1,36 @@
 #include <Arduino.h>
 #include <Vector.h>
-#include <CRC32.h>
+#include "CRC16.h"
+
+const int ledR= 38; // GPIO for controlling R channel
+const int ledG= 42; // GPIO for controlling G channel
+const int ledB= 34; // GPIO for controlling B channel
+
+int britnessR = 255; // Default: lowest brightness
+int britnessG = 255; // Default: lowest brightness
+int britnessB = 255; // Default: lowest brightness
+
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200); // Set the Baud rate to 115200 bits/s
   while (Serial.available() == 0) {}  
+
+  pinMode(ledR, OUTPUT);
+  pinMode(ledG, OUTPUT);
+  pinMode(ledB, OUTPUT);
+
+  analogWrite(ledG, britnessG); // Turn OFF the G channel
+  analogWrite(ledB, britnessB); // Turn OFF the B channel
+  analogWrite(ledR, britnessB);
 }
 
 int preamble = 0xAAAAAA;
-int nn = 0b1100001;
+CRC16 crc;
 
 void loop() {
-  // put your main code here, to run repeatedly:
   while (Serial.available() == 0) {}     //wait for data available
-  String input =  Serial.readString();
-  Serial.println(input);
+
+  String input =  Serial.readString();//get user input
   int length = input.length();
 
   int bin_array[(3 + 2 + 256 + 2) * 8];
@@ -32,9 +48,12 @@ void loop() {
   input.toCharArray(payload, length + 1);//convert input string to chars
   int index = 0;
   for(char onechar: payload){
-    for(int i = 7; i >= 0; i--){
-      bin.push_back(bitRead(onechar, i));//add bin bits into the vector
+    if(index != length){
+      for(int i = 7; i >= 0; i--){
+          bin.push_back(bitRead(onechar, i));//add bin bits into the vector
+      }
     }
+    index++;
   }
 
   uint8_t bytes_for_crc[3 + 2 + length];
@@ -44,10 +63,35 @@ void loop() {
       onebyte |= bin[i * 8 + j];
       if(j != 7) onebyte = onebyte << 1;
     }
-    Serial.println();
-    bytes_for_crc[i] = onebyte; 
+    bytes_for_crc[i] = onebyte; //get bytes used for calculating CRC
   }
-  for(uint8_t byte: bytes_for_crc){
-    Serial.println(byte, HEX);
+  
+  for(uint8_t byte: bytes_for_crc) {
+    crc.add(byte);
+  }
+  uint16_t res = crc.calc();//calculate CRC
+
+  for(int i = 15; i >= 0; i--){
+    bin.push_back(bitRead(res, i));//add CRC bits to bin bit vector.
+  }
+
+  int a = 0;
+  for(int bit: bin){
+    a++;
+    Serial.print(bit);
+    if(a % 8 == 0) Serial.println();
+  }
+  data_transmission(bin);
+  analogWrite(ledR, 256);
+}
+
+void data_transmission(Vector<int> bin){
+  for(int bit: bin){
+    analogWrite(ledR,bit * 255);
+    Serial.print(!bit);
+    delay(100); // TX frequency:  1s/400ms = 2.5 Hz
+    analogWrite(ledR, !bit * 255);
+    Serial.println(bit);
+    delay(100);
   }
 }
