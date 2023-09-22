@@ -27,3 +27,11 @@
 //       if((index + 1) % 8 != 0) cbyte = cbyte << 1;
 //     }
 //   }
+
+  //  nums++;
+  // Serial.print(data);
+  
+  // if (a == 8) {
+  //   Serial.println();
+  //   a = 0;
+  // }

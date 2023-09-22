@@ -2,6 +2,8 @@
 #include <Vector.h>
 #include "CRC16.h"
 
+CRC16 crc;
+
 const int ledR= 38; // GPIO for controlling R channel
 const int ledG= 42; // GPIO for controlling G channel
 const int ledB= 34; // GPIO for controlling B channel
@@ -10,16 +12,25 @@ int britnessR = 255; // Default: lowest brightness
 int britnessG = 255; // Default: lowest brightness
 int britnessB = 255; // Default: lowest brightness
 
-int period = 10000; //microsecond
+int preamble = 0xAAAAAA;
 
-bool start = false;
-unsigned long time_switch = 0;
+unsigned long period = 100000; //microsecond
+
+unsigned long time_start = 0;
+unsigned long time_stop = 0;
+unsigned long delay_time = 0;
+unsigned long loop_end = 0;
+
+int bin_index = 0;
 
 int bin_array[(3 + 2 + 256 + 2) * 8];
 Vector<int> bin(bin_array);//create vector for bin data
 
+
+int times = 0;
+int cycle = 0;
+
 void setup() {
-  // put your setup code here, to run once:
   Serial.begin(115200); // Set the Baud rate to 115200 bits/s
   while (Serial.available() == 0) {}  
 
@@ -32,12 +43,10 @@ void setup() {
   analogWrite(ledR, britnessB);
 }
 
-int preamble = 0xAAAAAA;
-CRC16 crc;
-int times = 0;
 void loop() {
+  time_start = micros();
+  cycle = !cycle;
   if(Serial.available() != 0){ //wait for data available
-    unsigned long time_start = micros();
     String input =  Serial.readString();//get user input
     if(input.equals("start")){
       int times = 0;
@@ -45,22 +54,18 @@ void loop() {
         analogWrite(ledR, 0);
         delay(1000);
         analogWrite(ledR, 255);
-        delay(1000);
         times++;
+        if(times != 5)
+          delay(1000);
       }
-      time_switch = micros();
-      start = true;
     }else{
       int length = input.length();
-      
       for(int i = 23; i >= 0; i--){
         bin.push_back(bitRead(preamble, i));//convert preamble bytes to bin bits and add into the vector
       }
-
       for(int i = 15; i >= 0; i--){
         bin.push_back(bitRead(length, i));//convert length bytes to bin bits and add into the vector
       }
-
       char payload[length + 1];
       input.toCharArray(payload, length + 1);//convert input string to chars
       int index = 0;
@@ -72,7 +77,6 @@ void loop() {
         }
         index++;
       }
-
       uint8_t bytes_for_crc[3 + 2 + length];
       for(int i = 0; i < 5 + length; i++){
         uint8_t onebyte = 0;
@@ -90,41 +94,40 @@ void loop() {
       for(int i = 15; i >= 0; i--){
         bin.push_back(bitRead(res, i));//add CRC bits to bin bit vector.
       }
-      unsigned long time_stop = micros();
-      unsigned long delay = period - (time_stop - time_start) % period - 2;
-      delayMicroseconds(delay);
-      
-      data_transmission(bin);
-      bin.clear();
     }
-  }else{
-    if(start == true){
-        unsigned long time_idle = micros();
-        unsigned long delay = period - (time_idle - time_switch) - 2;
-        delayMicroseconds(delay);
-        time_switch = micros();
-    }
-
-
+  }else if (bin.size() != 0){
+    data_transmission();
   }
+  time_stop = micros();
+  delay_time = period - (time_stop - time_start) % period - 2 - 125;
+  delayMicroseconds(delay_time);
+  // loop_end = micros();
+  // Serial.println(loop_end - time_start);
+  Serial.println(!cycle);
 }
 
-void data_transmission(Vector<int> bin){
-  // int aa = 0;
-  for(int bit: bin){
-    analogWrite(ledR, !bit * 255);
-    // Serial.print(bit);
-    delayMicroseconds(period * 0.5 - 8);
-    analogWrite(ledR, bit * 255);
-    // Serial.print(!bit);
-    delayMicroseconds(period * 0.5 - 8);
-    // aa++;
-    // if(aa == 4) {
-    //   Serial.println();
-    //   aa = 0;
-    // }
+
+
+
+
+/*********************************** sub functions ***********************************/
+void data_transmission(){
+  if(bin_index % 2 == 0){
+    analogWrite(ledR, !bin[bin_index / 2] * 255);
+    // Serial.print(bin[bin_index / 2]);
+  } else if(bin_index % 2 == 1){
+    analogWrite(ledR, bin[bin_index / 2] * 255);
+    // Serial.print(!bin[bin_index / 2]);
   }
-  time_switch = micros();
-  Serial.println("done");
-  analogWrite(ledR, 255);
+    
+  bin_index++;
+  // if(bin_index % 8 == 0)
+  //   Serial.println();
+
+  if(bin_index == 2 * bin.size()){
+    bin.clear();
+    Serial.println("done");
+    analogWrite(ledR, 255);
+    bin_index = 0;
+  }
 }
