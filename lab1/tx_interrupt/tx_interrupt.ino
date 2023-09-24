@@ -1,7 +1,10 @@
 #include <Arduino.h>
 #include <Vector.h>
 #include "CRC16.h"
+#include "SAMDUETimerInterrupt.h"
 
+#define PERIOD 976 //microsecond
+#define NOP __asm__ __volatile__ ("nop\n\t")
 CRC16 crc;
 
 const int ledR= 38; // GPIO for controlling R channel
@@ -14,21 +17,36 @@ int britnessB = 255; // Default: lowest brightness
 
 int preamble = 0xAAAAAA;
 
-unsigned long period = 100000; //microsecond
-
-unsigned long time_start = 0;
-unsigned long time_stop = 0;
-unsigned long delay_time = 0;
-unsigned long loop_end = 0;
-
 int bin_index = 0;
+int start = 0;
+bool tx_ready = false;
+unsigned long time1 = 0;
 
 int bin_array[(3 + 2 + 256 + 2) * 8];
 Vector<int> bin(bin_array);//create vector for bin data
 
+void TimerHandler(){
+  // start = !start;
+  // Serial.println(start);
+  if(tx_ready){
+    if(bin_index % 2 == 0){
+      analogWrite(ledR, !bin[bin_index / 2] * 255);
+      // Serial.print(bin[bin_index / 2]);
+    } else if(bin_index % 2 == 1){
+      analogWrite(ledR, bin[bin_index / 2] * 255);
+      // Serial.print(!bin[bin_index / 2]);
+    }
+    bin_index++;
+  }
+  if(bin_index == bin.size() * 2 && bin_index != 0){
+    bin.clear();
+    Serial.println("done");
+    analogWrite(ledR, 255);
+    bin_index = 0;
+    tx_ready = false;
+  }
+}
 
-int times = 0;
-int cycle = 0;
 
 void setup() {
   Serial.begin(115200); // Set the Baud rate to 115200 bits/s
@@ -40,24 +58,33 @@ void setup() {
 
   analogWrite(ledG, britnessG); // Turn OFF the G channel
   analogWrite(ledB, britnessB); // Turn OFF the B channel
-  analogWrite(ledR, britnessB);
+  analogWrite(ledR, britnessB); // Turn OFF the R channel
 }
 
 void loop() {
-  time_start = micros();
-  cycle = !cycle;
+  // put your main code here, to run repeatedly:
   if(Serial.available() != 0){ //wait for data available
     String input =  Serial.readString();//get user input
     if(input.equals("start")){
       int times = 0;
-      while(times != 5){
+      while(times != 10){
         analogWrite(ledR, 0);
-        delay(1000);
+        delay(100);
         analogWrite(ledR, 255);
         times++;
-        if(times != 5)
-          delay(1000);
+
+        // time1 = micros();
+        if(times != 10)
+          delay(100);
+        if(times == 10) {
+          delayMicroseconds(5);
+          
+          attachDueInterrupt(PERIOD, TimerHandler, "ITimer0"); 
+          // unsigned long time2 = micros();
+          // Serial.println(time2 - time1);  
+        }      
       }
+      
     }else{
       int length = input.length();
       for(int i = 23; i >= 0; i--){
@@ -94,40 +121,23 @@ void loop() {
       for(int i = 15; i >= 0; i--){
         bin.push_back(bitRead(res, i));//add CRC bits to bin bit vector.
       }
+
+      tx_ready = true;
     }
-  }else if (bin.size() != 0){
-    data_transmission();
   }
-  time_stop = micros();
-  delay_time = period - (time_stop - time_start) % period - 2 - 125;
-  delayMicroseconds(delay_time);
-  // loop_end = micros();
-  // Serial.println(loop_end - time_start);
-  Serial.println(!cycle);
 }
 
 
+uint16_t attachDueInterrupt(double microseconds, timerCallback callback, const char* TimerName)
+{
+  
+  DueTimerInterrupt dueTimerInterrupt = DueTimer.getAvailable();
+  
+  dueTimerInterrupt.attachInterruptInterval(microseconds, callback);
 
+  uint16_t timerNumber = dueTimerInterrupt.getTimerNumber();
+  
+  Serial.print(TimerName); Serial.print(F(" attached to Timer(")); Serial.print(timerNumber); Serial.println(F(")"));
 
-
-/*********************************** sub functions ***********************************/
-void data_transmission(){
-  if(bin_index % 2 == 0){
-    analogWrite(ledR, !bin[bin_index / 2] * 255);
-    // Serial.print(bin[bin_index / 2]);
-  } else if(bin_index % 2 == 1){
-    analogWrite(ledR, bin[bin_index / 2] * 255);
-    // Serial.print(!bin[bin_index / 2]);
-  }
-    
-  bin_index++;
-  // if(bin_index % 8 == 0)
-  //   Serial.println();
-
-  if(bin_index == 2 * bin.size()){
-    bin.clear();
-    Serial.println("done");
-    analogWrite(ledR, 255);
-    bin_index = 0;
-  }
+  return timerNumber;
 }

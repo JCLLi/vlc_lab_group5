@@ -1,40 +1,23 @@
-/*
-  test_rx.ino: testing the VLC receiver
-  Course: CESE4110 Visible Light Communication & Sensing
-*/
-
-
-/*
- * The VLC receiver is equipped with an OPT101 photodiode. 
- * Pin 5 of the OPT101 is connected to A0 of the Arduino Due
- * Pin 1 of the OPT101 is connected to 5V of the Arduino Due
- * Pin 8 of the OPT101 is connected to GND of the Arduino Due
- */
 #define PD A0 // PD: Photodiode
 #include <Vector.h>
 #include <Arduino.h>
 #include "CRC16.h"
+#include "SAMDUETimerInterrupt.h"
 
+#define PERIOD 976 //microsecond
 CRC16 crc;
-unsigned long period = 100000;
 
 const int threshold = 500;
 const int upper_threshould = 950;
+const int lower_threshould = 50;
 
 const int ELEMENT_COUNT_MAX = 5 + 255 + 2;
 
 int preamble[] = {1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0};
 
-int data = -1;
 int count = 0;
 int currentIndex = 0;
 int messageLength = 0;
-
-
-unsigned long time_start = 0;
-unsigned long time_stop = 0;
-unsigned long delay_time = 0;
-unsigned long loop_end = 0;
 
 int receivedData_a[ELEMENT_COUNT_MAX * 8 * 2];
 int resultVector_a[ELEMENT_COUNT_MAX * 8];
@@ -50,49 +33,34 @@ int dark = 0;
 int last = 0;
 
 int nums = 0;
-int cycle = 0;
+int start = 0;
+unsigned long time1 = 0;
 
-
-void setup() {
-    Serial.begin(115200);
-}
-
-void loop() {
-  time_start = micros();
-  cycle = !cycle;
- 
-  while(light != 5 || dark != 5){ 
-    uint32_t value = analogRead(PD);
-    delay(10);
-    if (value > upper_threshould){
-      if (last < 200) {
-        light++;
-        // Serial.print(1);
-      }
-    }
-    if (value < 200){
-      if(last > upper_threshould) {
-        dark++;
-        // Serial.print(0);
-      }
-    }
-    last = value;
-  }
-  // read light intensity
+void TimerHandler(){
+  // start = !start;
+  // Serial.println(start);
+  nums++;
   int lightIntensity = analogRead(PD);
-
+  int data = 0;
   if (lightIntensity > threshold) 
     data = 1; 
-  else 
-    data = 0;
+  // Serial.print(data);
+  // if(nums == 8) {
+  //   Serial.println();
+  //   nums = 0;
+  // }
+  delayMicroseconds(1);
+  if(count == 0){
+    if(data == 1){
+      receivedData.push_back(data);
+      count++;
+    }
+  }else{
+    receivedData.push_back(data);
+    count++;
+  }
 
-  count += 1;
-
-  // store data into vector receivedData
-  receivedData.push_back(data);
-  
-  //Manchester decoding: 10 -> 1, 01 -> 0
-  if (currentIndex + 1 < receivedData.size() || count % 2 == 0) {
+  if (count % 2 == 0 && count != 0) {
     int firstValue = receivedData[currentIndex];
     int secondValue = receivedData[currentIndex + 1];
     int bin_bit = 0;
@@ -117,16 +85,50 @@ void loop() {
       }
     }
   }
+}
 
+
+void setup() {
+  // put your setup code here, to run once:
+  Serial.begin(115200);
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+  while(light != 10 || dark != 10){ 
+    uint32_t value = analogRead(PD);
+    delay(1);
+    if (value > upper_threshould){
+      if (last < lower_threshould) {
+        light++;
+        // Serial.print(1);
+      }
+    }
+    if (value < lower_threshould){
+      if(last > upper_threshould) {
+        dark++;
+        // Serial.print(0);
+        // time1 = micros();
+      }
+    }
+    last = value;
+    if(dark == 10){
+      attachDueInterrupt(PERIOD, TimerHandler, "ITimer0");
+      // unsigned long time2 = micros();
+      // Serial.println(time2 - time1);
+    }      
+      
+  }
+  //Manchester decoding: 10 -> 1, 01 -> 0
+  
   if (resultVector.size() == 5 * 8){
     messageLength = readMessageLength();
   }
-
   if (resultVector.size() == (messageLength + 5 + 2) * 8) {
     // calculate CRC and campare with the recieved CRC
     uint16_t receivedCRC = readCRC();
     uint16_t calculatedCRC = calculateCRC();
-  
+    
     if (receivedCRC == calculatedCRC) {
       Serial.println("Message CRC OK");
       msgDecoding();
@@ -138,17 +140,21 @@ void loop() {
     count = 0;
     currentIndex = 0;
   } 
-  time_stop = micros();
-  // Serial.print("time: ");Serial.println(time2 - time1);
-  delay_time = period - (time_stop - time_start) % period - 2 - 128;
-  delayMicroseconds(delay_time); 
-  // loop_end = micros();
-  // Serial.println(loop_end - time_start);
-  Serial.println(!cycle);
 
 }
 
+uint16_t attachDueInterrupt(double microseconds, timerCallback callback, const char* TimerName)
+{
+  DueTimerInterrupt dueTimerInterrupt = DueTimer.getAvailable();
+  
+  dueTimerInterrupt.attachInterruptInterval(microseconds, callback);
 
+  uint16_t timerNumber = dueTimerInterrupt.getTimerNumber();
+  
+  Serial.print(TimerName); Serial.print(F(" attached to Timer(")); Serial.print(timerNumber); Serial.println(F(")"));
+
+  return timerNumber;
+}
 
 
 
