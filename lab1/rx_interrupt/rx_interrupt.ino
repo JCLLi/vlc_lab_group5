@@ -4,70 +4,69 @@
 #include "CRC16.h"
 #include "SAMDUETimerInterrupt.h"
 
-#define PERIOD 488 //microsecond 190 min
+#define PERIOD 488 // Microsecond, 190 min
 CRC16 crc;
 
-// 14cm: 28, 48, 10
-// 13cm: 36, 63, 25
-// 12cm: 40, 67, 13
-// 11cm: 46, 75, 17
-// 10cm: 48, 86, 10
-// 9cm : 52, 94, 10
-// 8cm : 64, 108, 10
-// 7cm : 81, 145, 15
-// 6cm : 104, 191, 15
-// 5cm : 148, 276, 15
-// 4cm : 215, 415, 16
-// 3cm : 285, 554, 17
-// 2cm : 480, 945, 15
-// 1cm : 512, 1018, 16
-int threshold = 0;//423,//148 48
+// Threshold for decoding and alignment
+int threshold = 0;
 int upper_threshold = 0;
 int lower_threshold = 0;
 int threshold_bias = 3;
 
+// Max payload size
 const int ELEMENT_COUNT_MAX = 5 + 255 + 2;
 
 int preamble[] = {1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0};
 
+// Values used for decoding
 int count = 0;
 int currentIndex = 0;
 int messageLength = 0;
 
+// Vector used to store received data
 int receivedData_a[ELEMENT_COUNT_MAX * 8 * 2];
 int resultVector_a[ELEMENT_COUNT_MAX * 8];
 uint8_t byteData_a[ELEMENT_COUNT_MAX];
 char decodeResult_a[ELEMENT_COUNT_MAX];
-
 Vector<int> receivedData(receivedData_a);
 Vector<int> resultVector(resultVector_a);
 Vector<char> decodeResult(decodeResult_a);
 
+// Flags used for alignment
 int light = 0;
 int dark = 0;
 int last = 0;
 
+// functional flags
 int nums = 0;
 int start = 0;
 int times = 0;
 bool wait = false;
 bool cali = true;
+
+// Timer
 DueTimerInterrupt dueTimerInterrupt = DueTimer.getAvailable();
 
+// Interrupt handler
 void TimerHandler(){
   // start = !start;
   // Serial.println(start);
-  nums++;
+  
+ // Light detection and convert in bin bits
   int lightIntensity = analogRead(PD);
   int data = 0;
   if (lightIntensity > threshold) 
     data = 1; 
+
+  // nums++;
   // Serial.print(data);
   // if(nums == 8) {
   //   Serial.println();
   //   nums = 0;
   // }
   delayMicroseconds(1);
+
+ // Store data
   if(count == 0){
     if(data == 1){
       receivedData.push_back(data);
@@ -78,6 +77,7 @@ void TimerHandler(){
     count++;
   }
 
+ // Check preamble
   if (count % 2 == 0 && count != 0) {
     int firstValue = receivedData[currentIndex];
     int secondValue = receivedData[currentIndex + 1];
@@ -99,7 +99,6 @@ void TimerHandler(){
         resultVector.clear();
         count = 0;
         currentIndex = 0;
-        // Serial.println("Preamble is Wrong!");
       }
     }
   }
@@ -107,11 +106,11 @@ void TimerHandler(){
 
 
 void setup() {
-  // put your setup code here, to run once:
   Serial.begin(115200);
 }
 
 void loop() {
+// Function for restarting or calibration
   if(Serial.available() != 0){
     String input = Serial.readString();
     if(input.equals("cali")){
@@ -127,11 +126,13 @@ void loop() {
       cali = false;
     }
   }
-  // put your main code here, to run repeatedly:
+
+// Calibration or alignment
   if(cali){
     calibration();
   }
   else{
+    // Alignment: receive repeteaed 1 and 0 10 times
     while(light != 10 || dark != 10){ 
       if(!wait){
         delay(100);
@@ -155,20 +156,22 @@ void loop() {
           Serial.print(0);
         }
       }
-      // Serial.print("light: ");Serial.print(light);Serial.print(" dark: ");Serial.println(dark);
       last = value;
       if(dark == 10){
+        // Alignment ends, timer starts
         attachDueInterrupt(PERIOD, TimerHandler, "ITimer0");
       }      
     }
   }
 
+  // Calculate payload length
   if (resultVector.size() == 5 * 8){
     messageLength = readMessageLength();
   }
 
+  // Check CRC and decode data to readble message
   if (resultVector.size() == (messageLength + 5 + 2) * 8) {
-    // calculate CRC and campare with the recieved CRC
+    // Calculate CRC and campare with the recieved CRC
     uint16_t receivedCRC = readCRC();
     uint16_t calculatedCRC = calculateCRC();
     Serial.print("rcrc: ");Serial.println(receivedCRC);
@@ -187,6 +190,7 @@ void loop() {
 
 }
 
+// Timer interrupt setting
 uint16_t attachDueInterrupt(double microseconds, timerCallback callback, const char* TimerName)
 {
   dueTimerInterrupt.restartTimer();
@@ -203,7 +207,7 @@ uint16_t attachDueInterrupt(double microseconds, timerCallback callback, const c
 
 
 /*********************************** sub functions ***********************************/
-// message length to DEC
+// Message length to DEC
 int readMessageLength() {
   int messageLength = 0;
   for (int i = 0; i < 2 * 8; i++) {
@@ -215,6 +219,7 @@ int readMessageLength() {
   return messageLength;
 }
 
+// Read CRC from received data
 uint16_t readCRC() {
   uint16_t CRC = 0;
   for (int i = 0; i < 16; i++) {
@@ -223,7 +228,7 @@ uint16_t readCRC() {
   return CRC;
 }
 
-// calculate CRC and store byte data into vector byteData
+// Calculate CRC and store byte data into vector byteData
 uint16_t calculateCRC() {
   int size = 5 + readMessageLength();
   crc.reset();
@@ -235,7 +240,7 @@ uint16_t calculateCRC() {
   return crcValue;
 }
 
-// read msg bits to bytes
+// Read msg bits to bytes
 uint8_t readDataForCRC(int n) {
   uint8_t oneByte = 0;
   for (int i = 0; i < 8; i++) {
