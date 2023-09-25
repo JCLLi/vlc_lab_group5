@@ -3,7 +3,7 @@
 #include "CRC16.h"
 #include "SAMDUETimerInterrupt.h"
 
-#define PERIOD 976 //microsecond
+#define PERIOD 488 //microsecond
 #define NOP __asm__ __volatile__ ("nop\n\t")
 CRC16 crc;
 
@@ -21,6 +21,7 @@ int bin_index = 0;
 int start = 0;
 bool tx_ready = false;
 unsigned long time1 = 0;
+DueTimerInterrupt dueTimerInterrupt = DueTimer.getAvailable();
 
 int bin_array[(3 + 2 + 256 + 2) * 8];
 Vector<int> bin(bin_array);//create vector for bin data
@@ -78,7 +79,7 @@ void loop() {
           delay(100);
         if(times == 10) {
           delayMicroseconds(5);
-          
+          NOP;NOP;
           attachDueInterrupt(PERIOD, TimerHandler, "ITimer0"); 
           // unsigned long time2 = micros();
           // Serial.println(time2 - time1);  
@@ -131,7 +132,7 @@ void loop() {
 uint16_t attachDueInterrupt(double microseconds, timerCallback callback, const char* TimerName)
 {
   
-  DueTimerInterrupt dueTimerInterrupt = DueTimer.getAvailable();
+  dueTimerInterrupt.restartTimer();
   
   dueTimerInterrupt.attachInterruptInterval(microseconds, callback);
 

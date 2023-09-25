@@ -4,12 +4,27 @@
 #include "CRC16.h"
 #include "SAMDUETimerInterrupt.h"
 
-#define PERIOD 976 //microsecond
+#define PERIOD 488 //microsecond 190 min
 CRC16 crc;
 
-const int threshold = 500;
-const int upper_threshould = 950;
-const int lower_threshould = 50;
+// 14cm: 28, 48, 10
+// 13cm: 36, 63, 25
+// 12cm: 40, 67, 13
+// 11cm: 46, 75, 17
+// 10cm: 48, 86, 10
+// 9cm : 52, 94, 10
+// 8cm : 64, 108, 10
+// 7cm : 81, 145, 15
+// 6cm : 104, 191, 15
+// 5cm : 148, 276, 15
+// 4cm : 215, 415, 16
+// 3cm : 285, 554, 17
+// 2cm : 480, 945, 15
+// 1cm : 512, 1018, 16
+int threshold = 0;//423,//148 48
+int upper_threshold = 0;
+int lower_threshold = 0;
+int threshold_bias = 3;
 
 const int ELEMENT_COUNT_MAX = 5 + 255 + 2;
 
@@ -34,7 +49,10 @@ int last = 0;
 
 int nums = 0;
 int start = 0;
-unsigned long time1 = 0;
+int times = 0;
+bool wait = false;
+bool cali = true;
+DueTimerInterrupt dueTimerInterrupt = DueTimer.getAvailable();
 
 void TimerHandler(){
   // start = !start;
@@ -94,41 +112,67 @@ void setup() {
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  while(light != 10 || dark != 10){ 
-    uint32_t value = analogRead(PD);
-    delay(1);
-    if (value > upper_threshould){
-      if (last < lower_threshould) {
-        light++;
-        // Serial.print(1);
-      }
+  if(Serial.available() != 0){
+    String input = Serial.readString();
+    if(input.equals("cali")){
+      dueTimerInterrupt.stopTimer();
+      cali = true;
+    }else if(input.equals("restart")){
+      dueTimerInterrupt.stopTimer();
+      upper_threshold -= threshold_bias;
+      lower_threshold += threshold_bias;
+      times = 0;
+      light = 0;
+      dark = 0;
+      cali = false;
     }
-    if (value < lower_threshould){
-      if(last > upper_threshould) {
-        dark++;
-        // Serial.print(0);
-        // time1 = micros();
-      }
-    }
-    last = value;
-    if(dark == 10){
-      attachDueInterrupt(PERIOD, TimerHandler, "ITimer0");
-      // unsigned long time2 = micros();
-      // Serial.println(time2 - time1);
-    }      
-      
   }
-  //Manchester decoding: 10 -> 1, 01 -> 0
-  
+  // put your main code here, to run repeatedly:
+  if(cali){
+    calibration();
+  }
+  else{
+    while(light != 10 || dark != 10){ 
+      if(!wait){
+        delay(100);
+        wait = true;
+      }
+      uint32_t value = analogRead(PD);
+      if(abs(value - lower_threshold) < 10)
+        value = lower_threshold - 1;
+      if(abs(value - upper_threshold) < 10)
+        value = upper_threshold + 1;
+      delay(10);
+      if (value > upper_threshold){
+        if (last < lower_threshold) {
+          light++;
+          Serial.print(1);
+        }
+      }
+      if (value < lower_threshold){
+        if(last > upper_threshold) {
+          dark++;
+          Serial.print(0);
+        }
+      }
+      // Serial.print("light: ");Serial.print(light);Serial.print(" dark: ");Serial.println(dark);
+      last = value;
+      if(dark == 10){
+        attachDueInterrupt(PERIOD, TimerHandler, "ITimer0");
+      }      
+    }
+  }
+
   if (resultVector.size() == 5 * 8){
     messageLength = readMessageLength();
   }
+
   if (resultVector.size() == (messageLength + 5 + 2) * 8) {
     // calculate CRC and campare with the recieved CRC
     uint16_t receivedCRC = readCRC();
     uint16_t calculatedCRC = calculateCRC();
-    
+    Serial.print("rcrc: ");Serial.println(receivedCRC);
+    Serial.print("ccrc: ");Serial.println(calculatedCRC);
     if (receivedCRC == calculatedCRC) {
       Serial.println("Message CRC OK");
       msgDecoding();
@@ -145,7 +189,7 @@ void loop() {
 
 uint16_t attachDueInterrupt(double microseconds, timerCallback callback, const char* TimerName)
 {
-  DueTimerInterrupt dueTimerInterrupt = DueTimer.getAvailable();
+  dueTimerInterrupt.restartTimer();
   
   dueTimerInterrupt.attachInterruptInterval(microseconds, callback);
 
@@ -210,4 +254,22 @@ int msgDecoding(){
     Serial.print(cbyte);
   }
   Serial.println();
+}
+
+int calibration(){
+    int read_value = analogRead(PD);
+    if(times < 250){
+      times++;
+      lower_threshold += read_value;
+    }
+    if(times == 250){
+      lower_threshold = lower_threshold / 250;
+      upper_threshold = read_value;
+      times++;
+    }
+    if(times == 251 && read_value > upper_threshold)
+      upper_threshold = read_value;
+    threshold = (lower_threshold + threshold_bias) + ((upper_threshold - threshold_bias) - lower_threshold - threshold_bias) / 2;
+    Serial.print("min: ");Serial.print(lower_threshold + threshold_bias);Serial.print(" max: ");Serial.print(upper_threshold - threshold_bias);Serial.print(" average = ");Serial.print(threshold);Serial.print(" ");Serial.println(read_value);
+    delayMicroseconds(10000); // two times per second
 }
