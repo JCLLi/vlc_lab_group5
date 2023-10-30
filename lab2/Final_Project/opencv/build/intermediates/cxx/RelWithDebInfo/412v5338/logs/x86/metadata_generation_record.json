@@ -1,0 +1,156 @@
+[
+  {
+    "level_": 0,
+    "message_": "Start JSON generation. Platform version: 28 min SDK version: x86",
+    "file_": "/Users/jessie/AndroidStudioProjects/final_project/opencv/libcxx_helper/CMakeLists.txt",
+    "tag_": "release|x86",
+    "diagnosticCode_": 0,
+    "memoizedIsInitialized": 1,
+    "unknownFields": {
+      "fields": {},
+      "fieldsDescending": {}
+    },
+    "memoizedSize": -1,
+    "memoizedHashCode": -235628859
+  },
+  {
+    "level_": 0,
+    "message_": "rebuilding JSON /Users/jessie/AndroidStudioProjects/final_project/opencv/.cxx/RelWithDebInfo/412v5338/x86/android_gradle_build.json due to:",
+    "file_": "/Users/jessie/AndroidStudioProjects/final_project/opencv/libcxx_helper/CMakeLists.txt",
+    "tag_": "release|x86",
+    "diagnosticCode_": 0,
+    "memoizedIsInitialized": 1,
+    "unknownFields": {
+      "fields": {},
+      "fieldsDescending": {}
+    },
+    "memoizedSize": -1,
+    "memoizedHashCode": -1729630818
+  },
+  {
+    "level_": 0,
+    "message_": "- no fingerprint file, will remove stale configuration folder",
+    "file_": "/Users/jessie/AndroidStudioProjects/final_project/opencv/libcxx_helper/CMakeLists.txt",
+    "tag_": "release|x86",
+    "diagnosticCode_": 0,
+    "memoizedIsInitialized": 1,
+    "unknownFields": {
+      "fields": {},
+      "fieldsDescending": {}
+    },
+    "memoizedSize": -1,
+    "memoizedHashCode": -1010322135
+  },
+  {
+    "level_": 0,
+    "message_": "removing stale contents from \u0027/Users/jessie/AndroidStudioProjects/final_project/opencv/.cxx/RelWithDebInfo/412v5338/x86\u0027",
+    "file_": "/Users/jessie/AndroidStudioProjects/final_project/opencv/libcxx_helper/CMakeLists.txt",
+    "tag_": "release|x86",
+    "diagnosticCode_": 0,
+    "memoizedIsInitialized": 1,
+    "unknownFields": {
+      "fields": {},
+      "fieldsDescending": {}
+    },
+    "memoizedSize": -1,
+    "memoizedHashCode": 2118925075
+  },
+  {
+    "level_": 0,
+    "message_": "created folder \u0027/Users/jessie/AndroidStudioProjects/final_project/opencv/.cxx/RelWithDebInfo/412v5338/x86\u0027",
+    "file_": "/Users/jessie/AndroidStudioProjects/final_project/opencv/libcxx_helper/CMakeLists.txt",
+    "tag_": "release|x86",
+    "diagnosticCode_": 0,
+    "memoizedIsInitialized": 1,
+    "unknownFields": {
+      "fields": {},
+      "fieldsDescending": {}
+    },
+    "memoizedSize": -1,
+    "memoizedHashCode": 1137212191
+  },
+  {
+    "level_": 0,
+    "message_": "executing cmake /Users/jessie/Library/Android/sdk/cmake/3.22.1/bin/cmake \\\n  -H/Users/jessie/AndroidStudioProjects/final_project/opencv/libcxx_helper \\\n  -DCMAKE_SYSTEM_NAME\u003dAndroid \\\n  -DCMAKE_EXPORT_COMPILE_COMMANDS\u003dON \\\n  -DCMAKE_SYSTEM_VERSION\u003d28 \\\n  -DANDROID_PLATFORM\u003dandroid-28 \\\n  -DANDROID_ABI\u003dx86 \\\n  -DCMAKE_ANDROID_ARCH_ABI\u003dx86 \\\n  -DANDROID_NDK\u003d/Users/jessie/Library/Android/sdk/ndk/23.1.7779620 \\\n  -DCMAKE_ANDROID_NDK\u003d/Users/jessie/Library/Android/sdk/ndk/23.1.7779620 \\\n  -DCMAKE_TOOLCHAIN_FILE\u003d/Users/jessie/Library/Android/sdk/ndk/23.1.7779620/build/cmake/android.toolchain.cmake \\\n  -DCMAKE_MAKE_PROGRAM\u003d/Users/jessie/Library/Android/sdk/cmake/3.22.1/bin/ninja \\\n  -DCMAKE_LIBRARY_OUTPUT_DIRECTORY\u003d/Users/jessie/AndroidStudioProjects/final_project/opencv/build/intermediates/cxx/RelWithDebInfo/412v5338/obj/x86 \\\n  -DCMAKE_RUNTIME_OUTPUT_DIRECTORY\u003d/Users/jessie/AndroidStudioProjects/final_project/opencv/build/intermediates/cxx/RelWithDebInfo/412v5338/obj/x86 \\\n  -DCMAKE_BUILD_TYPE\u003dRelWithDebInfo \\\n  -B/Users/jessie/AndroidStudioProjects/final_project/opencv/.cxx/RelWithDebInfo/412v5338/x86 \\\n  -GNinja \\\n  -DANDROID_STL\u003dc++_shared\n",
+    "file_": "/Users/jessie/AndroidStudioProjects/final_project/opencv/libcxx_helper/CMakeLists.txt",
+    "tag_": "release|x86",
+    "diagnosticCode_": 0,
+    "memoizedIsInitialized": 1,
+    "unknownFields": {
+      "fields": {},
+      "fieldsDescending": {}
+    },
+    "memoizedSize": -1,
+    "memoizedHashCode": 2089043734
+  },
+  {
+    "level_": 0,
+    "message_": "/Users/jessie/Library/Android/sdk/cmake/3.22.1/bin/cmake \\\n  -H/Users/jessie/AndroidStudioProjects/final_project/opencv/libcxx_helper \\\n  -DCMAKE_SYSTEM_NAME\u003dAndroid \\\n  -DCMAKE_EXPORT_COMPILE_COMMANDS\u003dON \\\n  -DCMAKE_SYSTEM_VERSION\u003d28 \\\n  -DANDROID_PLATFORM\u003dandroid-28 \\\n  -DANDROID_ABI\u003dx86 \\\n  -DCMAKE_ANDROID_ARCH_ABI\u003dx86 \\\n  -DANDROID_NDK\u003d/Users/jessie/Library/Android/sdk/ndk/23.1.7779620 \\\n  -DCMAKE_ANDROID_NDK\u003d/Users/jessie/Library/Android/sdk/ndk/23.1.7779620 \\\n  -DCMAKE_TOOLCHAIN_FILE\u003d/Users/jessie/Library/Android/sdk/ndk/23.1.7779620/build/cmake/android.toolchain.cmake \\\n  -DCMAKE_MAKE_PROGRAM\u003d/Users/jessie/Library/Android/sdk/cmake/3.22.1/bin/ninja \\\n  -DCMAKE_LIBRARY_OUTPUT_DIRECTORY\u003d/Users/jessie/AndroidStudioProjects/final_project/opencv/build/intermediates/cxx/RelWithDebInfo/412v5338/obj/x86 \\\n  -DCMAKE_RUNTIME_OUTPUT_DIRECTORY\u003d/Users/jessie/AndroidStudioProjects/final_project/opencv/build/intermediates/cxx/RelWithDebInfo/412v5338/obj/x86 \\\n  -DCMAKE_BUILD_TYPE\u003dRelWithDebInfo \\\n  -B/Users/jessie/AndroidStudioProjects/final_project/opencv/.cxx/RelWithDebInfo/412v5338/x86 \\\n  -GNinja \\\n  -DANDROID_STL\u003dc++_shared\n",
+    "file_": "/Users/jessie/AndroidStudioProjects/final_project/opencv/libcxx_helper/CMakeLists.txt",
+    "tag_": "release|x86",
+    "diagnosticCode_": 0,
+    "memoizedIsInitialized": 1,
+    "unknownFields": {
+      "fields": {},
+      "fieldsDescending": {}
+    },
+    "memoizedSize": -1,
+    "memoizedHashCode": -2089147721
+  },
+  {
+    "level_": 0,
+    "message_": "Exiting generation of /Users/jessie/AndroidStudioProjects/final_project/opencv/.cxx/RelWithDebInfo/412v5338/x86/compile_commands.json.bin normally",
+    "file_": "/Users/jessie/AndroidStudioProjects/final_project/opencv/libcxx_helper/CMakeLists.txt",
+    "tag_": "release|x86",
+    "diagnosticCode_": 0,
+    "memoizedIsInitialized": 1,
+    "unknownFields": {
+      "fields": {},
+      "fieldsDescending": {}
+    },
+    "memoizedSize": -1,
+    "memoizedHashCode": -238235420
+  },
+  {
+    "level_": 0,
+    "message_": "done executing cmake",
+    "file_": "/Users/jessie/AndroidStudioProjects/final_project/opencv/libcxx_helper/CMakeLists.txt",
+    "tag_": "release|x86",
+    "diagnosticCode_": 0,
+    "memoizedIsInitialized": 1,
+    "unknownFields": {
+      "fields": {},
+      "fieldsDescending": {}
+    },
+    "memoizedSize": -1,
+    "memoizedHashCode": 874633641
+  },
+  {
+    "level_": 0,
+    "message_": "hard linked /Users/jessie/AndroidStudioProjects/final_project/opencv/.cxx/RelWithDebInfo/412v5338/x86/compile_commands.json to /Users/jessie/AndroidStudioProjects/final_project/opencv/.cxx/tools/release/x86/compile_commands.json",
+    "file_": "/Users/jessie/AndroidStudioProjects/final_project/opencv/libcxx_helper/CMakeLists.txt",
+    "tag_": "release|x86",
+    "diagnosticCode_": 0,
+    "memoizedIsInitialized": 1,
+    "unknownFields": {
+      "fields": {},
+      "fieldsDescending": {}
+    },
+    "memoizedSize": -1,
+    "memoizedHashCode": -1915185599
+  },
+  {
+    "level_": 0,
+    "message_": "JSON generation completed without problems",
+    "file_": "/Users/jessie/AndroidStudioProjects/final_project/opencv/libcxx_helper/CMakeLists.txt",
+    "tag_": "release|x86",
+    "diagnosticCode_": 0,
+    "memoizedIsInitialized": 1,
+    "unknownFields": {
+      "fields": {},
+      "fieldsDescending": {}
+    },
+    "memoizedSize": -1,
+    "memoizedHashCode": -1482260571
+  }
+]

@@ -12,6 +12,6 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-rootProject.name = "Final_Project"
+rootProject.name = "final_project"
 include ':app'
-include ':OpenCV'
+include ':opencv'

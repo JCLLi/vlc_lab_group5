@@ -3,11 +3,13 @@ plugins {
 }
 
 android {
-    namespace 'com.vlc.final_project'
+    namespace 'com.example.final_project'
     compileSdk 34
 
+//    useLibrary org.apache.http.legacy
+
     defaultConfig {
-        applicationId "com.vlc.final_project"
+        applicationId "com.example.final_project"
         minSdk 28
         targetSdk 33
         versionCode 1
@@ -32,8 +34,10 @@ dependencies {
 
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.10.0'
-    implementation project(path: ':OpenCV')
+    implementation project(path: ':opencv')
+    implementation 'org.testng:testng:6.9.6'
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+    implementation group: 'org.apache.commons', name: 'commons-math3', version: '3.6.1' // 版本号替换为您下载的版本号
 }
