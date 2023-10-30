@@ -1,5 +1,7 @@
 package com.vlc.final_project;
 
+import static java.lang.Math.abs;
+
 import android.util.Log;
 
 import org.opencv.core.Mat;
@@ -33,7 +35,7 @@ public class Frame {
         return mat_copy;
     }
 
-    public static double[] radius_and_center(List<MatOfPoint> contours){
+    public static void radius_and_center(List<MatOfPoint> contours, List<Double> r_n_c){
         MatOfPoint2f[] contoursPoly = new MatOfPoint2f[contours.size()];
         Point[] centers = new Point[contours.size()];
         float[][] radius = new float[contours.size()][1];
@@ -44,46 +46,36 @@ public class Frame {
             Imgproc.minEnclosingCircle(contoursPoly[i], centers[i], radius[i]);
         }
 
-//        int group = 0;
-//
-//        for (int i = 1; i < centers.length; i++){
-//            double dx = 0;
-//            double dy = 0;
-//            dx = centers[i].x - centers[i - 1].x;
-//            dy = centers[i].y - centers[i - 1].y;
-//            if(dx > 300 || dy > 300){
-//                group++;
-//            }
-//        }
+        List<Integer> sp = new ArrayList<>();
 
-        float max_r = 0;
-        float se_max_r = 0;
-        int index = 0;
-        int se_index = 0;
-        for (int i = 0; i < radius.length; i++) {
-            if (i == 0)
-                max_r = radius[i][0];
-            else {
-                if (radius[i][0] > max_r) {
-                    max_r = radius[i][0];
-                    index = i;
-                }
+        for (int i = 1; i < centers.length; i++){
+            double dx = centers[i].x - centers[i - 1].x;
+            double dy = centers[i].y - centers[i - 1].y;
+            if(abs(dx) > 300 || abs(dy) > 300){
+                sp.add(i);
             }
         }
-//
-//        for (int i = 0; i < radius.length; i++) {
-//            if (i == 0)
-//                se_max_r = radius[i][0];
-//            else {
-//                if (radius[i][0] > se_max_r && radius[i][0] != max_r) {
-//                    se_max_r = radius[i][0];
-//                    se_index = i;
-//                }
-//            }
-//        }
-
-        double[] r_n_c = {(double) max_r, centers[index].x, centers[index].y};
-        return r_n_c;
+        sp.add(centers.length - 1);
+        float max_radius = 0;
+        int index = 0;
+        for (int j = 0; j < sp.size(); j++){
+            int start = 0;
+            if(j != 0)
+                start = sp.get(j - 1) + 1;
+            for (int i = start; i < sp.get(j) + 1; i++) {
+                if (i == start)
+                    max_radius = radius[i][0];
+                else {
+                    if (radius[i][0] > max_radius) {
+                        max_radius = radius[i][0];
+                        index = i;
+                    }
+                }
+            }
+            r_n_c.add((double) max_radius);
+            r_n_c.add((double) centers[index].x);
+            r_n_c.add((double) centers[index].y);
+        }
     }
 
     public static int[] frame_quantify(Mat edge, int[] range, float radius){

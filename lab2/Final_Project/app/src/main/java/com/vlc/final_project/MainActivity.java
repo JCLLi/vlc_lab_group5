@@ -25,6 +25,8 @@ import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.android.Utils;
+import org.opencv.core.Core;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfPoint2f;
@@ -130,7 +132,7 @@ public class MainActivity extends AppCompatActivity {
 
         if(requestCode == 100 && data != null){
             Mat mat_copy;
-            Mat result;
+            Mat result = new Mat(4000, 3000, CvType.CV_8UC1);
             Mat mat = new Mat();
             try {
                 Matrix matrix = new Matrix();
@@ -139,14 +141,14 @@ public class MainActivity extends AppCompatActivity {
                 Bitmap rotatedBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
 
                 List<MatOfPoint> contours = new ArrayList<>();
-
+                List<Double> radius_n_center = new ArrayList<>();
                 Utils.bitmapToMat(rotatedBitmap, mat);
                 // Find contour of the led
                 mat_copy = Frame.find_contour(contours, mat);
 
                 // Calculate radius and center of the led
-                double[] radius_n_center = Frame.radius_and_center(contours);
-                int y = (int) radius_n_center[2];
+                Frame.radius_and_center(contours, radius_n_center);
+                int y = (int) radius_n_center.get(2).doubleValue();
                 boolean black = true;
                 for (int i = 0; i < mat_copy.cols(); i++){
                     double test = mat_copy.get(y, i)[0];
@@ -155,28 +157,45 @@ public class MainActivity extends AppCompatActivity {
                         break;
                     }
                 }
+                List<Float> freq_list = new ArrayList<>();
+                List<int[]> center_list = new ArrayList<>();
                 if (!black){
-                    int[] range = Frame.light_range((int) radius_n_center[1], (int) radius_n_center[2], (float) radius_n_center[0]);
+                    String frequency = "";
+                    for(int i = 0; i < radius_n_center.size(); i += 3){
+                        int[] range = Frame.light_range((int) radius_n_center.get(1 + i).doubleValue(),
+                                (int) radius_n_center.get(2 + i).doubleValue(),
+                                (float) radius_n_center.get(i).doubleValue());
 
-                    // Process image to get the edge of pulses
-                    Frame struct = Frame.frame_process(mat_copy, (float) radius_n_center[0]);
-                    Mat edge = new Mat();
-                    Imgproc.Canny(struct.mat, edge, struct.threshold / 5, struct.threshold, 7);
+                        // Process image to get the edge of pulses
+                        Frame struct = Frame.frame_process(mat_copy, (float) radius_n_center.get(i).doubleValue());
+                        Mat edge = new Mat();
+                        Imgproc.Canny(struct.mat, edge, struct.threshold / 5, struct.threshold, 7);
 
-                    // Convert image to quantifiable data
-                    int[] columnSums = Frame.frame_quantify(edge, range, (float) radius_n_center[0]);
-                    List<Float> pulse = Frame.getPulses(columnSums, range[0]);
+                        // Convert image to quantifiable data
+                        int[] columnSums = Frame.frame_quantify(edge, range, (float) radius_n_center.get(i).doubleValue());
+                        List<Float> pulse = Frame.getPulses(columnSums, range[0]);
 
-                    Frame.filterPules(pulse, struct.mat, struct.threshold, (int) radius_n_center[2], (float) radius_n_center[0]);
-                    // Calculate corresponding led frequency
-                    float freq = Frame.calc_freq(pulse, 100);
+                        Frame.filterPules(pulse, struct.mat, struct.threshold, (int) radius_n_center.get(2 + i).doubleValue(),
+                                (float) radius_n_center.get(i).doubleValue());
 
-                    // Draw the edge of pulse
-                    result = Frame.draw(struct.mat, pulse, (int) radius_n_center[2]);
+                        // Calculate corresponding led frequency
+                        float freq = Frame.calc_freq(pulse, 100);
+                        frequency += Float.toString(freq) + "\n";
+
+                        // Draw the edge of pulse
+                        Mat temp = Frame.draw(struct.mat, pulse, (int) radius_n_center.get(2 + i).doubleValue());
+                        Core.add(temp, result, result);
+
+                        freq_list.add(freq);
+
+                        int[] center = {(int) radius_n_center.get(1 + i).doubleValue(), (int) radius_n_center.get(2 + i).doubleValue()};
+                        center_list.add(center);
+
+                    }
 
                     Utils.matToBitmap(result, rotatedBitmap);
                     imageView.setImageBitmap(rotatedBitmap);
-                    textView.setText(Float.toString(freq));
+                    textView.setText(frequency);
                 }
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -196,9 +215,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void frame_process(){
-
-    }
     private void viewTransformation(View view, MotionEvent event) {
         switch (event.getAction() & MotionEvent.ACTION_MASK) {
             case MotionEvent.ACTION_DOWN:
