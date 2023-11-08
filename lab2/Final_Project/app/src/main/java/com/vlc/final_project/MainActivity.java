@@ -1,13 +1,12 @@
 package com.vlc.final_project;
 
-import static org.opencv.core.CvType.CV_8UC3;
+import static com.vlc.final_project.AoA.Location;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
 import android.graphics.PointF;
 import android.media.MediaMetadataRetriever;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.MediaStore;
@@ -29,9 +28,6 @@ import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
-import org.opencv.core.MatOfPoint2f;
-import org.opencv.core.Point;
-import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
 import java.io.IOException;
@@ -96,7 +92,7 @@ public class MainActivity extends AppCompatActivity {
         clear = findViewById(R.id.clear);
         imageView = findViewById(R.id.image);
         textView = findViewById(R.id.freq);
-        freq_list = new float[]{3704, 5000, 6667, 10000};
+//        freq_list = new float[]{3704, 5000, 6667, 10000};
 
         imageView.setOnTouchListener(new View.OnTouchListener() {
             @Override
@@ -157,8 +153,8 @@ public class MainActivity extends AppCompatActivity {
                         break;
                     }
                 }
-                List<Float> freq_list = new ArrayList<>();
-                List<int[]> center_list = new ArrayList<>();
+                ArrayList<Integer> freq_list = new ArrayList<>();
+                ArrayList<Location> center_list = new ArrayList<>();
                 if (!black){
                     String frequency = "";
                     for(int i = 0; i < radius_n_center.size(); i += 3){
@@ -186,13 +182,20 @@ public class MainActivity extends AppCompatActivity {
                         Mat temp = Frame.draw(struct.mat, pulse, (int) radius_n_center.get(2 + i).doubleValue());
                         Core.add(temp, result, result);
 
-                        freq_list.add(freq);
+                        freq_list.add((int) freq);
 
-                        int[] center = {(int) radius_n_center.get(1 + i).doubleValue(), (int) radius_n_center.get(2 + i).doubleValue()};
+                        Location center = new AoA.Location((radius_n_center.get(1 + i) - 1500), -(radius_n_center.get(2 + i) - 2000), AoA.Zf);
                         center_list.add(center);
 
                     }
 
+                    AoA aoa = new AoA();
+                    AoA.Result result1 = aoa.computeAoA(freq_list, center_list);
+                    frequency += Double.toString(result1.rxLocation.get(0)) + "\n" + Double.toString(result1.rxLocation.get(1)) + "\n" + Double.toString(result1.rxLocation.get(2));
+
+//                    BruteForce bf = new BruteForce(7.15, 3.5);
+//                    Location loc =  bf.getLoc(center_list, freq_list);
+//                    frequency += Double.toString(loc.x) + "\n" + Double.toString(loc.y);
                     Utils.matToBitmap(result, rotatedBitmap);
                     imageView.setImageBitmap(rotatedBitmap);
                     textView.setText(frequency);

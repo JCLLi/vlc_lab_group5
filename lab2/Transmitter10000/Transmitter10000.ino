@@ -5,11 +5,12 @@
 #define PERIOD1 270   // Microsecond
 #define PERIOD2 200   // Microsecond
 #define PERIOD3 150   // Microsecond
-#define PERIOD4 120   // Microsecond
+#define PERIOD4 110
+   // Microsecond
 
 
 #define NOP __asm__ __volatile__ ("nop\n\t") // Inline assebly instruction to delay one clock cycle
-float periods[4] = {150, PERIOD3, PERIOD2, PERIOD1};
+float periods[4] = {100, PERIOD3, PERIOD2, PERIOD1};
 
 int times = 0;
 int period = 0;
@@ -44,6 +45,7 @@ void TimerHandler(){
   if(tx_ready){
       times++;
       analogWrite(ledR, !bin[bin_index] * 255);
+      
       bin_index++;
 
     // Finish transmission

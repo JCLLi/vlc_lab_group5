@@ -23,6 +23,7 @@ public class Frame {
         this.threshold = threshold;
     }
 
+
     public static Mat find_contour(List<MatOfPoint> contours, Mat mat){
         Mat hierarchy = new Mat();
         Mat mat_copy;
@@ -46,36 +47,49 @@ public class Frame {
             Imgproc.minEnclosingCircle(contoursPoly[i], centers[i], radius[i]);
         }
 
-        List<Integer> sp = new ArrayList<>();
-
-        for (int i = 1; i < centers.length; i++){
-            double dx = centers[i].x - centers[i - 1].x;
-            double dy = centers[i].y - centers[i - 1].y;
-            if(abs(dx) > 300 || abs(dy) > 300){
-                sp.add(i);
+        List<ArrayList<Integer>> pointGroup = new ArrayList<>();
+        for (int i = 0; i < centers.length; i++){
+            boolean has = false;
+            for (ArrayList<Integer> pg: pointGroup){
+                if (pg.contains(i)){
+                    has = true;
+                    break;
+                }
+            }
+            if(!has){
+                boolean sim = false;
+                for (ArrayList<Integer> pg: pointGroup){
+                    double width = abs(centers[pg.get(0)].x - centers[i].x);
+                    double height = abs(centers[pg.get(0)].y - centers[i].y);
+                    if ( width < 300 &&  height < 300){
+                        pg.add(i);
+                        sim = true;
+                        break;
+                    }
+                }
+                if (!sim){
+                    ArrayList<Integer> group = new ArrayList<>();
+                    group.add(i);
+                    pointGroup.add(group);
+                }
             }
         }
-        sp.add(centers.length - 1);
-        float max_radius = 0;
-        int index = 0;
-        for (int j = 0; j < sp.size(); j++){
-            int start = 0;
-            if(j != 0)
-                start = sp.get(j - 1) + 1;
-            for (int i = start; i < sp.get(j) + 1; i++) {
-                if (i == start)
-                    max_radius = radius[i][0];
-                else {
-                    if (radius[i][0] > max_radius) {
-                        max_radius = radius[i][0];
-                        index = i;
-                    }
+
+
+        for(int i = 0; i < pointGroup.size(); i++){
+            int index = pointGroup.get(i).get(0);
+            float max_radius = radius[index][0];
+            for(int j = 1; j < pointGroup.get(i).size(); j++){
+                if(radius[pointGroup.get(i).get(j)][0] > max_radius){
+                    max_radius = radius[pointGroup.get(i).get(j)][0];
+                    index = pointGroup.get(i).get(j);
                 }
             }
             r_n_c.add((double) max_radius);
             r_n_c.add((double) centers[index].x);
             r_n_c.add((double) centers[index].y);
         }
+        int a = 0;
     }
 
     public static int[] frame_quantify(Mat edge, int[] range, float radius){
@@ -117,6 +131,8 @@ public class Frame {
                         weighted_sum += (column_index + start_x) * columnSums[column_index];
                         sum_weight += columnSums[column_index];
                         column_index++;
+                        if(column_index == columnSums.length)
+                            break;
                     }
                     pulse.add((float) weighted_sum / (float) sum_weight);
                     weighted_sum = 0;
@@ -240,9 +256,13 @@ public class Frame {
 
     public static int[] light_range(int center_x, int center_y, float radius){
         int start_x = center_x - (int) radius - 20;
+        if(start_x < 0) start_x = 0;
         int end_x = center_x + (int) radius + 20;
+        if(end_x > 2999 ) end_x = 2999;
         int start_y = center_y - (int) radius - 50;
+        if(start_y < 0) start_y = 0;
         int end_y = center_y + (int) radius + 50;
+        if(end_y > 3999 ) end_y = 3999;
         return new int[]{start_x, end_x, start_y, end_y};
     }
 }
